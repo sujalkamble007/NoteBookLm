@@ -212,7 +212,6 @@ const chatSchema = new mongoose.Schema({
 // Indexes for better performance
 chatSchema.index({ notebook: 1, user: 1, createdAt: -1 });
 chatSchema.index({ user: 1, lastActivity: -1 });
-chatSchema.index({ shareLink: 1 });
 chatSchema.index({ 'messages.role': 1, 'messages.createdAt': -1 });
 
 // Virtual for latest message

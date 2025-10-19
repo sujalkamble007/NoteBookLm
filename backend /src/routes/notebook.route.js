@@ -17,7 +17,7 @@ import { protect, checkSubscription } from '../middleware/auth.middleware.js';
 const router = Router();
 
 // Public routes
-router.route('/public').get(getPublicNotebooks);
+router.route('/public').get(getPublicNotebooks);      //done
 
 // All other routes require authentication
 router.use(protect);

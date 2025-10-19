@@ -165,7 +165,6 @@ notebookSchema.virtual('documentCount', {
 notebookSchema.index({ owner: 1, createdAt: -1 });
 notebookSchema.index({ tags: 1 });
 notebookSchema.index({ category: 1 });
-notebookSchema.index({ shareLink: 1 });
 notebookSchema.index({ 'keyTopics.topic': 'text', title: 'text', description: 'text' });
 
 // Pre-save middleware to generate share link if public

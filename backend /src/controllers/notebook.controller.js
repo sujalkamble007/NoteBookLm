@@ -6,34 +6,57 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 
 // Create new notebook
 export const createNotebook = asyncHandler(async (req, res) => {
-  const { title, description, tags, category, isPublic } = req.body;
+  const { title, description, tags, category, isPublic, settings } = req.body;
 
+  // Validation
   if (!title?.trim()) {
     throw new ApiError(400, "Notebook title is required");
   }
 
-  const notebook = await Notebook.create({
-    title: title.trim(),
-    description: description?.trim(),
-    owner: req.user._id,
-    tags: tags || [],
-    category: category || 'personal',
-    isPublic: isPublic || false
-  });
+  if (title.trim().length > 200) {
+    throw new ApiError(400, "Title must be less than 200 characters");
+  }
 
-  // Update user's notebook count
-  await User.findByIdAndUpdate(
-    req.user._id,
-    { $inc: { totalNotebooks: 1 } }
-  );
+  if (description && description.length > 1000) {
+    throw new ApiError(400, "Description must be less than 1000 characters");
+  }
 
-  const createdNotebook = await Notebook.findById(notebook._id)
-    .populate('owner', 'name email avatar')
-    .populate('collaborators.user', 'name email avatar');
+  try {
+    const notebook = await Notebook.create({
+      title: title.trim(),
+      description: description?.trim() || "",
+      owner: req.user._id,
+      tags: Array.isArray(tags) ? tags : [],
+      category: category || 'personal',
+      isPublic: Boolean(isPublic),
+      settings: {
+        allowDownload: settings?.allowDownload ?? true,
+        allowComments: settings?.allowComments ?? true,
+        theme: settings?.theme || 'light',
+        language: settings?.language || 'en'
+      }
+    });
 
-  return res
-    .status(201)
-    .json(new ApiResponse(201, createdNotebook, "Notebook created successfully"));
+    // Update user's notebook count
+    await User.findByIdAndUpdate(
+      req.user._id,
+      { $inc: { totalNotebooks: 1 } }
+    );
+
+    const createdNotebook = await Notebook.findById(notebook._id)
+      .populate('owner', 'name email avatar')
+      .populate('collaborators.user', 'name email avatar');
+
+    return res
+      .status(201)
+      .json(new ApiResponse(201, createdNotebook, "Notebook created successfully"));
+
+  } catch (error) {
+    if (error.code === 11000) {
+      throw new ApiError(409, "A notebook with this title already exists for this user");
+    }
+    throw new ApiError(500, error.message || "Failed to create notebook");
+  }
 });
 
 // Get all notebooks for user
