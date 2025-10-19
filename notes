@@ -1,0 +1,91 @@
+Create the folder 
+
+frontend 
+    command npm create vite@latest 
+
+backend
+    create src
+        1.controller 
+        2.db
+        3.middlewares
+        4.models
+                5.routes
+        7.utils
+    .env
+    .gitignore
+    app.js
+    constants.js
+## Project scaffolding (frontend + backend)
+
+Below is a clean scaffold and the exact commands to set it up on macOS/zsh. Note: the duplicate "routes" entry in the original list is consolidated to a single `routes` folder.
+
+---
+
+### Frontend (Vite)
+
+- Create a Vite app (you can choose the template interactively):
+
+```sh
+npm create vite@latest frontend
+cd frontend
+npm install
+# Start dev server
+npm run dev
+```
+
+---
+
+### Backend (Node.js)
+
+Desired structure:
+
+```
+backend/
+    src/
+        controllers/
+        db/
+        middlewares/
+        models/
+        routes/
+        utils/
+    .env
+    .gitignore
+    app.js
+    constants.js
+```
+
+Create the folders/files from the workspace root:
+
+```sh
+# Create directories
+mkdir -p backend/src/{controllers,db,middlewares,models,routes,utils}
+
+# Touch base files (edit them later as needed)
+touch backend/.env \
+            backend/.gitignore \
+            backend/app.js \
+            backend/constants.js
+```
+
+Optional: initialize a backend package.json and install common packages
+
+```sh
+cd backend
+npm init -y
+
+# Example: express + dotenv + nodemon (adjust as needed)
+npm i express
+npm i dotenv
+npm i cors
+npm i mongoose
+npm i jsonwebtoken
+npm i bcryptj
+npm i bcryptjs
+npm install cookie-parser
+
+
+npm i -D nodemon
+
+# Add a dev script (optional)
+# In package.json -> scripts: { "dev": "nodemon app.js" }
+    
