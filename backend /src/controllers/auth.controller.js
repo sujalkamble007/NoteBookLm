@@ -299,3 +299,60 @@ export const getUserStats = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, stats, "User statistics fetched successfully"));
 });
+
+// Google OAuth callback
+export const googleCallback = asyncHandler(async (req, res) => {
+  try {
+    // User is available in req.user after successful passport authentication
+    const user = req.user;
+
+    if (!user) {
+      // Redirect to frontend with error
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
+    }
+
+    // Generate tokens for the user
+    const { accessToken, refreshToken } = await generateTokens(user._id);
+
+    // Set cookies
+    res.cookie("accessToken", accessToken, setCookieOptions);
+    res.cookie("refreshToken", refreshToken, setCookieOptions);
+
+    // Redirect to frontend dashboard with success
+    return res.redirect(`${process.env.FRONTEND_URL}/dashboard?oauth_success=true`);
+    
+  } catch (error) {
+    console.error('Google OAuth Callback Error:', error);
+    return res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_error`);
+  }
+});
+
+// Google OAuth success - API endpoint for SPA
+export const googleSuccess = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    throw new ApiError(401, "OAuth authentication failed");
+  }
+
+  // Generate tokens
+  const { accessToken, refreshToken } = await generateTokens(req.user._id);
+
+  // Get user without sensitive data
+  const user = await User.findById(req.user._id).select("-password -refreshTokens");
+
+  return res
+    .status(200)
+    .cookie("accessToken", accessToken, setCookieOptions)
+    .cookie("refreshToken", refreshToken, setCookieOptions)
+    .json(
+      new ApiResponse(
+        200,
+        { user, accessToken, refreshToken },
+        "Google OAuth successful"
+      )
+    );
+});
+
+// Handle OAuth failure
+export const googleFailure = asyncHandler(async (req, res) => {
+  throw new ApiError(401, "Google OAuth authentication failed");
+});

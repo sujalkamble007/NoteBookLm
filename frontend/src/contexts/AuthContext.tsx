@@ -26,6 +26,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check if user is logged in on app start
     const initializeAuth = async () => {
       try {
+        // Check for OAuth success callback first
+        if (authService.checkOAuthSuccess()) {
+          try {
+            const result = await authService.handleOAuthCallback();
+            if (result?.success) {
+              setUser(result.data.user);
+              // Clean OAuth params from URL
+              authService.cleanOAuthParams();
+              setLoading(false);
+              return;
+            }
+          } catch (error) {
+            console.error('OAuth callback error:', error);
+            authService.cleanOAuthParams();
+          }
+        }
+
+        // Check for OAuth error
+        const oauthError = authService.checkOAuthError();
+        if (oauthError) {
+          console.error('OAuth error:', oauthError);
+          authService.cleanOAuthParams();
+        }
+
+        // Standard authentication check
         if (authService.isAuthenticated()) {
           const currentUser = await authService.getCurrentUser();
           setUser(currentUser);
@@ -89,7 +114,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const isAuthenticated = !!user && authService.isAuthenticated();
+  const isAuthenticated = !!user;
 
   const value: AuthContextType = {
     user,

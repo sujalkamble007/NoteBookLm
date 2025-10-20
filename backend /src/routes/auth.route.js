@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import passport from 'passport';
 import {
   registerUser,
   loginUser,
@@ -7,7 +8,10 @@ import {
   getCurrentUser,
   updateUserProfile,
   changePassword,
-  getUserStats
+  getUserStats,
+  googleCallback,
+  googleSuccess,
+  googleFailure
 } from '../controllers/auth.controller.js';
 import { protect } from '../middleware/auth.middleware.js';
 
@@ -25,8 +29,24 @@ router.route('/update-profile').patch(protect, updateUserProfile);
 router.route('/change-password').patch(protect, changePassword);
 router.route('/stats').get(protect, getUserStats);    //done
 
-// Google OAuth routes (will be implemented with Passport.js)
-// router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-// router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), googleCallback);
+// Google OAuth routes
+router.get('/google', 
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'],
+    prompt: 'select_account' // Force account selection
+  })
+);
+
+router.get('/google/callback', 
+  passport.authenticate('google', { 
+    failureRedirect: '/api/v1/auth/google/failure',
+    session: false 
+  }), 
+  googleCallback
+);
+
+// OAuth API endpoints for SPA
+router.get('/google/success', protect, googleSuccess);
+router.get('/google/failure', googleFailure);
 
 export default router;

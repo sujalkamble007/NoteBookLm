@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff, User, Mail, Lock, UserPlus } from 'lucide-react';
+import GoogleSignInButton from './GoogleSignInButton';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +17,8 @@ const Register: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { register, isAuthenticated } = useAuth();
+
+  // OAuth handling is done globally in AuthContext, no need to duplicate here
 
   // Redirect if already authenticated
   if (isAuthenticated) {
@@ -197,6 +200,24 @@ const Register: React.FC = () => {
               )}
             </button>
           </form>
+
+          {/* Divider */}
+          <div className="mt-6 mb-6">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Google Sign In */}
+          <GoogleSignInButton 
+            text="Sign up with Google"
+            disabled={isLoading}
+          />
 
           <div className="mt-6 text-center">
             <p className="text-gray-600">

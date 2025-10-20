@@ -6,6 +6,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Limit } from './constants.js';
 
+// Import Passport configuration
+import passport from './src/config/passport.config.js';
+
 // Import routes
 import authRoutes from './src/routes/auth.route.js';
 import notebookRoutes from './src/routes/notebook.route.js';
@@ -41,6 +44,9 @@ app.use(urlencoded({ extended: true, limit: Limit }));
 // Static files and cookies
 app.use(express.static("public"));
 app.use(cookieParser());
+
+// Initialize Passport
+app.use(passport.initialize());
 
 // Create uploads directory if it doesn't exist
 import fs from 'fs';

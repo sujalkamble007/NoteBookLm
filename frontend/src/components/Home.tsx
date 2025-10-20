@@ -95,7 +95,7 @@ const Home: React.FC = () => {
                 href="/login" 
                 className="inline-flex items-center gap-2 bg-white text-primary-600 px-8 py-3 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200"
               >
-                Test Authentication
+                Login
                 <ArrowRight className="w-5 h-5" />
               </a>
               <a 
@@ -103,7 +103,9 @@ const Home: React.FC = () => {
                 className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white px-8 py-3 rounded-full font-semibold hover:bg-white/20 transition-all duration-200"
               >
                 Create Account
+                <ArrowRight className="w-5 h-5" />
               </a>
+              
             </div>
           </div>
         </div>

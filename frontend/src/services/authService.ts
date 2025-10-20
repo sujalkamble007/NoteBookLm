@@ -140,6 +140,8 @@ class AuthService {
   // Check if user is authenticated
   isAuthenticated(): boolean {
     const token = localStorage.getItem('accessToken');
+    // For cookie-based auth (OAuth), we can't check httpOnly cookies directly
+    // The AuthContext will determine authentication state by trying to get current user
     return !!token;
   }
 
@@ -157,6 +159,56 @@ class AuthService {
   async testConnection(): Promise<{ message: string; timestamp: string; version: string }> {
     const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/health`);
     return response.data;
+  }
+
+  // Google OAuth - Redirect to Google login
+  initiateGoogleLogin(): void {
+    const googleAuthUrl = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1'}/users/google`;
+    window.location.href = googleAuthUrl;
+  }
+
+  // Handle OAuth callback (for popup/redirect flows)
+  async handleOAuthCallback(): Promise<AuthResponse | null> {
+    try {
+      // The backend has already set cookies during redirect
+      // We just need to get the current user to populate the context
+      const user = await this.getCurrentUser();
+      
+      // Return a successful response (cookies are already set by backend)
+      return {
+        statusCode: 200,
+        success: true,
+        message: 'OAuth authentication successful',
+        data: {
+          user,
+          accessToken: 'cookie-based',  // Indicate tokens are in cookies
+          refreshToken: 'cookie-based'
+        }
+      };
+    } catch (error) {
+      console.error('OAuth callback error:', error);
+      return null;
+    }
+  }
+
+  // Check if OAuth was successful (from URL params)
+  checkOAuthSuccess(): boolean {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('oauth_success') === 'true';
+  }
+
+  // Check if OAuth failed (from URL params)
+  checkOAuthError(): string | null {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('error');
+  }
+
+  // Clean OAuth params from URL
+  cleanOAuthParams(): void {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('oauth_success');
+    url.searchParams.delete('error');
+    window.history.replaceState({}, document.title, url.toString());
   }
 }
 
