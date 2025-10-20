@@ -13,6 +13,7 @@ import passport from './src/config/passport.config.js';
 import authRoutes from './src/routes/auth.route.js';
 import notebookRoutes from './src/routes/notebook.route.js';
 import documentRoutes from './src/routes/document.route.js';
+import chatRoutes from './src/routes/chat.route.js';
 
 // Import error handling
 import { ApiError } from './src/utils/ApiError.js';
@@ -48,6 +49,14 @@ app.use(cookieParser());
 // Initialize Passport
 app.use(passport.initialize());
 
+// Add request logging middleware
+app.use((req, res, next) => {
+  console.log(`🌐 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+  console.log('🔍 Origin:', req.headers.origin);
+  console.log('📝 Body keys:', Object.keys(req.body || {}));
+  next();
+});
+
 // Create uploads directory if it doesn't exist
 import fs from 'fs';
 const uploadsDir = path.join(__dirname, 'public/uploads/documents');
@@ -69,6 +78,7 @@ app.get('/health', (req, res) => {
 app.use('/api/v1/users', authRoutes);
 app.use('/api/v1/notebooks', notebookRoutes);
 app.use('/api/v1/documents', documentRoutes);
+app.use('/api/v1/chat', chatRoutes);
 
 // 404 handler for unknown routes
 app.use((req, res, next) => {

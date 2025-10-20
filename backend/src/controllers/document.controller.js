@@ -6,24 +6,61 @@ import { ApiError } from '../utils/ApiError.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import { DocumentParser } from '../utils/documentParser.js';
 import groqService from '../utils/groq.service.js';
+import ragService from '../utils/rag.service.js';
 import { deleteFromCloudinary, getCloudinaryPublicId } from '../middleware/cloudinary.middleware.js';
 import path from 'path';
 import fs from 'fs/promises';
 
 // Upload and process document (with Cloudinary)
 export const uploadDocument = asyncHandler(async (req, res) => {
+  console.log('📥 Upload request received');
+  console.log('📁 Files:', req.files?.length || 0);
+  console.log('📝 Body:', req.body);
+  console.log('👤 User:', req.user?._id);
+  
   const { notebookId } = req.body;
   const files = req.files;
 
   if (!files || files.length === 0) {
+    console.log('❌ No files in request');
     throw new ApiError(400, "No files uploaded");
   }
 
   if (!notebookId) {
+    console.log('❌ No notebook ID provided');
     throw new ApiError(400, "Notebook ID is required");
   }
 
   try {
+    console.log('🚀 Starting file processing...');
+    
+    // Handle "default" notebook case - create or find user's default notebook
+    let actualNotebookId = notebookId;
+    if (notebookId === 'default') {
+      console.log('📝 Creating/finding default notebook for user...');
+      
+      // Find user's default notebook or create one
+      let defaultNotebook = await Notebook.findOne({
+        owner: req.user._id,
+        title: 'My Documents'
+      });
+      
+      if (!defaultNotebook) {
+        defaultNotebook = await Notebook.create({
+          title: 'My Documents',
+          description: 'Default notebook for uploaded documents',
+          owner: req.user._id,
+          category: 'personal',
+          isPublic: false
+        });
+        console.log('✅ Created default notebook:', defaultNotebook._id);
+      } else {
+        console.log('✅ Found existing default notebook:', defaultNotebook._id);
+      }
+      
+      actualNotebookId = defaultNotebook._id;
+    }
+    
     const uploadedDocuments = [];
 
     for (const file of files) {
@@ -36,7 +73,7 @@ export const uploadDocument = asyncHandler(async (req, res) => {
       // Check for existing document with same checksum in the notebook
       const existingDoc = await Document.findOne({ 
         checksum, 
-        notebook: notebookId,
+        notebook: actualNotebookId,
         status: { $ne: 'deleted' }
       });
       
@@ -44,7 +81,7 @@ export const uploadDocument = asyncHandler(async (req, res) => {
         // Delete the uploaded file from Cloudinary since it's a duplicate
         const publicId = getCloudinaryPublicId(file.path);
         if (publicId) {
-          await deleteFromCloudinary(publicId, 'auto');
+          await deleteFromCloudinary(publicId, 'raw');
         }
         continue; // Skip this file, don't throw error for batch uploads
       }
@@ -59,7 +96,7 @@ export const uploadDocument = asyncHandler(async (req, res) => {
         fileSize: file.size,
         fileUrl: file.path, // Cloudinary URL
         cloudinaryPublicId: getCloudinaryPublicId(file.path),
-        notebook: notebookId,
+        notebook: actualNotebookId,
         uploadedBy: req.user._id,
         checksum,
         status: 'processing'
@@ -83,12 +120,15 @@ export const uploadDocument = asyncHandler(async (req, res) => {
         `${uploadedDocuments.length} document(s) uploaded successfully`));
 
   } catch (error) {
+    console.error('💥 Upload error:', error);
+    console.error('💥 Error stack:', error.stack);
+    
     // Clean up uploaded files from Cloudinary in case of error
     if (files && files.length > 0) {
       for (const file of files) {
         const publicId = getCloudinaryPublicId(file.path);
         if (publicId) {
-          await deleteFromCloudinary(publicId, 'auto').catch(console.error);
+          await deleteFromCloudinary(publicId, 'raw').catch(console.error);
         }
       }
     }
@@ -115,31 +155,42 @@ async function processDocumentAsync(documentId, cloudinaryUrl, fileType, mimeTyp
     document.pageCount = extractionResult.metadata?.pages || 0;
     document.processingStatus.textExtraction = 'completed';
 
-    // Step 2: AI Analysis using Groq
+    // Step 2: Enhanced AI Analysis using RAG (Groq + Tavily + YouTube)
     document.processingStatus.aiAnalysis = 'processing';
     await document.save();
 
-    const aiAnalysis = await groqService.analyzeDocument(extractionResult.text, {
-      type: fileType,
-      language: 'english'
+    const aiAnalysis = await ragService.enhancedDocumentAnalysis(extractionResult.text, {
+      enableRealTimeSearch: true,
+      enableVideoSuggestions: true,
+      maxSearchResults: 5,
+      maxVideoResults: 3
     });
     
-    // Convert Groq analysis to schema format
-    document.keyPoints = aiAnalysis.mainConcepts.map((concept, index) => ({
+    // Convert enhanced RAG analysis to schema format
+    document.keyPoints = aiAnalysis.mainConcepts?.map((concept, index) => ({
       point: concept,
       importance: Math.max(0.1, 1 - (index * 0.15)),
       context: aiAnalysis.summary
-    }));
+    })) || [];
 
     document.entities = [
-      ...aiAnalysis.entities.people.map(person => ({ text: person, type: 'PERSON', confidence: 0.9 })),
-      ...aiAnalysis.entities.places.map(place => ({ text: place, type: 'LOCATION', confidence: 0.9 })),
-      ...aiAnalysis.entities.organizations.map(org => ({ text: org, type: 'ORGANIZATION', confidence: 0.9 })),
-      ...aiAnalysis.entities.dates.map(date => ({ text: date, type: 'DATE', confidence: 0.9 }))
+      ...(aiAnalysis.entities?.people?.map(person => ({ text: person, type: 'PERSON', confidence: 0.9 })) || []),
+      ...(aiAnalysis.entities?.places?.map(place => ({ text: place, type: 'LOCATION', confidence: 0.9 })) || []),
+      ...(aiAnalysis.entities?.organizations?.map(org => ({ text: org, type: 'ORGANIZATION', confidence: 0.9 })) || []),
+      ...(aiAnalysis.entities?.dates?.map(date => ({ text: date, type: 'DATE', confidence: 0.9 })) || [])
     ];
 
     document.aiSummary = aiAnalysis.summary;
-    document.searchKeywords = aiAnalysis.keyTopics;
+    document.searchKeywords = aiAnalysis.keyTopics || [];
+    
+    // Store enhanced RAG data
+    document.enhancedAnalysis = {
+      ragEnhanced: aiAnalysis.ragEnhanced,
+      enhancedInsights: aiAnalysis.enhancedInsights,
+      realTimeSearch: aiAnalysis.realTimeSearch,
+      videoSuggestions: aiAnalysis.videoSuggestions,
+      processingTimestamp: aiAnalysis.processingTimestamp
+    };
     document.processingStatus.aiAnalysis = 'completed';
 
     // Step 3: Create text chunks for RAG
@@ -380,7 +431,7 @@ export const deleteDocument = asyncHandler(async (req, res) => {
     // Delete file from Cloudinary
     try {
       if (document.cloudinaryPublicId) {
-        await deleteFromCloudinary(document.cloudinaryPublicId, 'auto');
+        await deleteFromCloudinary(document.cloudinaryPublicId, 'raw');
       }
     } catch (error) {
       console.error('Error deleting file from Cloudinary:', error);

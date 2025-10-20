@@ -16,7 +16,7 @@ const documentStorage = new CloudinaryStorage({
   params: {
     folder: 'notebooklm/documents',
     allowed_formats: ['pdf', 'doc', 'docx', 'txt', 'csv', 'xlsx', 'xls'],
-    resource_type: 'auto',
+    resource_type: 'raw',
     public_id: (req, file) => {
       // Generate unique filename
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);

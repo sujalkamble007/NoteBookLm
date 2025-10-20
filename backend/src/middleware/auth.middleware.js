@@ -4,20 +4,28 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export const protect = asyncHandler(async (req, res, next) => {
+  console.log('🔐 Auth middleware hit for:', req.method, req.path);
+  console.log('📡 Headers:', req.headers.authorization ? 'Bearer token present' : 'No bearer token');
+  console.log('🍪 Cookies:', req.cookies?.accessToken ? 'Cookie token present' : 'No cookie token');
+  
   let token;
 
   // Check for token in Authorization header
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
       token = req.headers.authorization.split(' ')[1];
+      console.log('✅ Token extracted from Bearer header');
     } catch (error) {
+      console.log('❌ Error extracting Bearer token:', error);
       throw new ApiError(401, 'Invalid authorization header format');
     }
   } else if (req.cookies?.accessToken) {
     token = req.cookies.accessToken;
+    console.log('✅ Token extracted from cookies');
   }
 
   if (!token) {
+    console.log('❌ No token found');
     throw new ApiError(401, 'Not authorized, no token provided');
   }
 
@@ -25,8 +33,15 @@ export const protect = asyncHandler(async (req, res, next) => {
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
     
+    // Handle both _id and userId in JWT payload (for compatibility with OAuth)
+    const userId = decoded._id || decoded.userId;
+    
+    if (!userId) {
+      throw new ApiError(401, 'Invalid token payload');
+    }
+    
     // Get user from token and add to request
-    const user = await User.findById(decoded._id).select('-password -refreshTokens');
+    const user = await User.findById(userId).select('-password -refreshTokens');
     
     if (!user) {
       throw new ApiError(401, 'Token invalid - user not found');
@@ -62,10 +77,16 @@ export const optionalAuth = asyncHandler(async (req, res, next) => {
   if (token) {
     try {
       const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-      const user = await User.findById(decoded._id).select('-password -refreshTokens');
       
-      if (user && user.isActive) {
-        req.user = user;
+      // Handle both _id and userId in JWT payload
+      const userId = decoded._id || decoded.userId;
+      
+      if (userId) {
+        const user = await User.findById(userId).select('-password -refreshTokens');
+        
+        if (user && user.isActive) {
+          req.user = user;
+        }
       }
     } catch (error) {
       // Ignore errors in optional auth

@@ -1,4 +1,4 @@
-import Groq from 'groq-sdk';
+import Groq from 'groq-sdk/index.mjs';
 import { ApiError } from './ApiError.js';
 
 // Initialize Groq client
@@ -9,9 +9,9 @@ const groq = new Groq({
 class GroqService {
   constructor() {
     this.models = {
-      fast: 'mixtral-8x7b-32768',
-      balanced: 'llama2-70b-4096',
-      powerful: 'mixtral-8x7b-32768'
+      fast: 'llama-3.1-8b-instant',
+      balanced: 'llama-3.1-70b-versatile', 
+      powerful: 'openai/gpt-oss-20b'
     };
   }
 
@@ -31,6 +31,13 @@ class GroqService {
         stream = false
       } = options;
 
+      console.log('🤖 Making Groq API call with:', {
+        model,
+        promptLength: prompt.length,
+        maxTokens,
+        temperature
+      });
+
       const completion = await groq.chat.completions.create({
         messages: [
           {
@@ -47,8 +54,18 @@ class GroqService {
 
       return completion.choices[0]?.message?.content || '';
     } catch (error) {
-      console.error('Groq API Error:', error);
-      throw new ApiError(500, 'Failed to generate text with Groq API');
+      console.error('🚨 Groq API Error Details:', {
+        message: error.message,
+        status: error.status,
+        statusText: error.statusText,
+        response: error.response?.data,
+        stack: error.stack
+      });
+      
+      // Log the API key status (without revealing the key)
+      console.log('🔑 Groq API Key Status:', process.env.GROQ_API_KEY ? 'Present' : 'Missing');
+      
+      throw new ApiError(500, `Failed to generate text with Groq API: ${error.message}`);
     }
   }
 

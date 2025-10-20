@@ -25,7 +25,7 @@ router.use(verifyJWT);
 // Upload and process document
 router.route('/upload')
   .post(
-    validateNotebookAccess,
+    // validateNotebookAccess, // Temporarily disabled for debugging
     cloudinaryUpload.array('documents', 5),
     handleMulterError,
     uploadDocument

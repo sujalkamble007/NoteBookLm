@@ -4,7 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Home from './components/Home';
 import Login from './components/Login';
 import Register from './components/Register';
-import Dashboard from './components/Dashboard';
+import EnhancedDashboard from './components/EnhancedDashboard';
 
 function App() {
   return (
@@ -22,7 +22,7 @@ function App() {
               path="/dashboard" 
               element={
                 <ProtectedRoute>
-                  <Dashboard />
+                  <EnhancedDashboard />
                 </ProtectedRoute>
               } 
             />

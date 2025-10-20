@@ -104,9 +104,58 @@ const documentSchema = new mongoose.Schema({
       pageNumber: Number,
       startChar: Number,
       endChar: Number,
-      chunkIndex: Number
+      chunkIndex: Number,
+      keyTopics: [String] // Key topics for this chunk
     }
   }],
+  // Enhanced RAG Analysis Results
+  enhancedAnalysis: {
+    ragEnhanced: {
+      type: Boolean,
+      default: false
+    },
+    enhancedInsights: {
+      conversationalResponse: String,
+      keyConnections: [String],
+      learningPath: [String],
+      actionableInsights: [String],
+      furtherExploration: [String],
+      confidenceScore: {
+        type: Number,
+        min: 0,
+        max: 1
+      }
+    },
+    realTimeSearch: {
+      enabled: Boolean,
+      queries: [String],
+      results: [{
+        query: String,
+        title: String,
+        url: String,
+        content: String,
+        score: Number,
+        publishedDate: Date,
+        source: String
+      }]
+    },
+    videoSuggestions: {
+      enabled: Boolean,
+      videos: [{
+        query: String,
+        videoId: String,
+        title: String,
+        description: String,
+        channelTitle: String,
+        publishedAt: Date,
+        thumbnails: mongoose.Schema.Types.Mixed,
+        url: String,
+        embedUrl: String,
+        source: String
+      }]
+    },
+    processingTimestamp: Date
+  },
   // Processing status
   processingStatus: {
     textExtraction: {
