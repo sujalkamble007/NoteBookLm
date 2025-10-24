@@ -92,6 +92,14 @@ const Home: React.FC = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <a 
+                href="/notebook" 
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-3 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200"
+              >
+                <BookOpen className="w-5 h-5" />
+                Try NotebookLM
+                <ArrowRight className="w-5 h-5" />
+              </a>
+              <a 
                 href="/login" 
                 className="inline-flex items-center gap-2 bg-white text-primary-600 px-8 py-3 rounded-full font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-200"
               >
@@ -105,7 +113,6 @@ const Home: React.FC = () => {
                 Create Account
                 <ArrowRight className="w-5 h-5" />
               </a>
-              
             </div>
           </div>
         </div>

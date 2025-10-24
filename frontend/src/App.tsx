@@ -5,6 +5,7 @@ import Home from './components/Home';
 import Login from './components/Login';
 import Register from './components/Register';
 import SimpleDashboard from './components/SimpleDashboard';
+import NotebookLMDashboard from './components/NotebookLMDashboard';
 
 function App() {
   return (
@@ -23,6 +24,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <SimpleDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/notebook" 
+              element={
+                <ProtectedRoute>
+                  <NotebookLMDashboard />
                 </ProtectedRoute>
               } 
             />

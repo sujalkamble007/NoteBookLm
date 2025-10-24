@@ -11,6 +11,8 @@ import passport from './src/config/passport.config.js';
 
 // Import routes
 import authRoutes from './src/routes/auth.route.js';
+import documentRoutes from './src/routes/document.route.js';
+import notebookRoutes from './src/routes/notebook.route.js';
 
 // Import error handling
 import { ApiError } from './src/utils/ApiError.js';
@@ -68,6 +70,8 @@ app.get('/health', (req, res) => {
 // API Routes with v1 versioning
 // API Routes
 app.use('/api/v1/users', authRoutes);
+app.use('/api/v1/documents', documentRoutes);
+app.use('/api/v1/notebooks', notebookRoutes);
 
 // 404 handler for unknown routes
 app.use((req, res, next) => {
