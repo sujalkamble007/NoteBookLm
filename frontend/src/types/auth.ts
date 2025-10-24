@@ -6,8 +6,6 @@ export interface User {
   avatar?: string;
   plan: 'free' | 'premium' | 'enterprise';
   isEmailVerified: boolean;
-  totalNotebooks: number;
-  totalDocuments: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,8 +40,6 @@ export interface ApiError {
 }
 
 export interface UserStats {
-  totalNotebooks: number;
-  totalDocuments: number;
   plan: string;
   memberSince: string;
 }

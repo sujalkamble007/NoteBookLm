@@ -44,15 +44,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  // Usage tracking
-  totalNotebooks: {
-    type: Number,
-    default: 0
-  },
-  totalDocuments: {
-    type: Number,
-    default: 0
-  },
+
   // Subscription/Plan info
   plan: {
     type: String,
@@ -79,12 +71,7 @@ const userSchema = new mongoose.Schema({
   collection: 'users'
 });
 
-// Virtual for user's notebooks
-userSchema.virtual('notebooks', {
-  ref: 'Notebook',
-  localField: '_id',
-  foreignField: 'owner'
-});
+
 
 // Index for better query performance
 userSchema.index({ email: 1, googleId: 1 });
